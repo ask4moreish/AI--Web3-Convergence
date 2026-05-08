@@ -1,0 +1,22 @@
+{
+  "name": "stellar-agent-framework",
+  "private": true,
+  "workspaces": [
+    "sdk",
+    "api",
+    "web",
+    "agents/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w api\" \"npm run dev -w web\"",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "contracts:build": "cd contracts && cargo build --target wasm32-unknown-unknown --release",
+    "contracts:test": "cd contracts && cargo test"
+  },
+  "devDependencies": {
+    "@types/node": "20.12.12",
+    "concurrently": "8.2.2",
+    "typescript": "5.4.5"
+  }
+}

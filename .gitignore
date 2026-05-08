@@ -1,0 +1,15 @@
+# Environment
+.env
+
+# Node
+node_modules/
+dist/
+
+# Rust
+target/
+
+# Soroban build artifacts
+*.wasm
+
+# OS
+.DS_Store
