@@ -1,8 +1,8 @@
-import { AgentWallet } from "../src/wallet";
-import { AgentConfig } from "../src/types";
+import { AgentWallet } from "../wallet";
+import { AgentConfig } from "../types";
 
 // Testnet keypair — never use in production
-const TEST_SECRET = "SCZANGBA5RLMPI7JMTP2UX7BAYR7QDTBM7BFXNBZQKZQKZQKZQKZQK";
+const TEST_SECRET = "SBCRRLIG5YWHC5GE67ZI7BQ4KR3KEXIOOM2RBHUUXWMW5XNQNYMRR2T4";
 
 const config: AgentConfig = {
   secretKey: TEST_SECRET,

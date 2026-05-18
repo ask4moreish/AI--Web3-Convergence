@@ -1,17 +1,17 @@
-import { Address, SorobanRpc, nativeToScVal, scValToNative, xdr } from "@stellar/stellar-sdk";
+import { Address, rpc, nativeToScVal, scValToNative, xdr } from "@stellar/stellar-sdk";
 import { AgentConfig, Task } from "./types";
 import { AgentWallet } from "./wallet";
 import { callContract, viewContract } from "./soroban";
 
 export class TaskMarketClient {
-  private rpc: SorobanRpc.Server;
+  private rpcServer: rpc.Server;
   private wallet: AgentWallet;
   private contractId: string;
   private networkPassphrase: string;
 
   constructor(config: AgentConfig, wallet: AgentWallet) {
     this.contractId = config.taskMarketContractId;
-    this.rpc = new SorobanRpc.Server(config.rpcUrl);
+    this.rpcServer = new rpc.Server(config.rpcUrl);
     this.wallet = wallet;
     this.networkPassphrase = wallet.network();
   }
@@ -23,7 +23,7 @@ export class TaskMarketClient {
     paymentAmount: bigint
   ): Promise<bigint> {
     const result = await callContract(
-      this.rpc,
+      this.rpcServer,
       this.contractId,
       "post",
       [
@@ -41,7 +41,7 @@ export class TaskMarketClient {
   /** Claim an open task as this agent. */
   async claim(taskId: bigint): Promise<void> {
     await callContract(
-      this.rpc,
+      this.rpcServer,
       this.contractId,
       "claim",
       [
@@ -56,7 +56,7 @@ export class TaskMarketClient {
   /** Confirm task completion and release payment to the assignee. */
   async complete(taskId: bigint): Promise<void> {
     await callContract(
-      this.rpc,
+      this.rpcServer,
       this.contractId,
       "complete",
       [
@@ -71,7 +71,7 @@ export class TaskMarketClient {
   /** Cancel an open task and refund the requester. */
   async cancel(taskId: bigint): Promise<void> {
     await callContract(
-      this.rpc,
+      this.rpcServer,
       this.contractId,
       "cancel",
       [
@@ -86,7 +86,7 @@ export class TaskMarketClient {
   /** Fetch a single task by ID. */
   async getTask(taskId: bigint): Promise<Task | null> {
     const result = await viewContract(
-      this.rpc,
+      this.rpcServer,
       this.contractId,
       "get_task",
       [nativeToScVal(taskId, { type: "u64" })],
@@ -101,7 +101,7 @@ export class TaskMarketClient {
   /** Total number of tasks ever posted. */
   async taskCount(): Promise<bigint> {
     const result = await viewContract(
-      this.rpc,
+      this.rpcServer,
       this.contractId,
       "task_count",
       [],

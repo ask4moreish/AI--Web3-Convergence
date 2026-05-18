@@ -1,24 +1,24 @@
-import { Address, SorobanRpc, nativeToScVal, scValToNative, xdr } from "@stellar/stellar-sdk";
+import { Address, rpc, nativeToScVal, scValToNative, xdr } from "@stellar/stellar-sdk";
 import { AgentConfig, AgentEntry } from "./types";
 import { AgentWallet } from "./wallet";
 import { callContract, viewContract } from "./soroban";
 
 export class RegistryClient {
-  private rpc: SorobanRpc.Server;
+  private rpcServer: rpc.Server;
   private wallet: AgentWallet;
   private contractId: string;
   private networkPassphrase: string;
 
   constructor(config: AgentConfig, wallet: AgentWallet) {
     this.contractId = config.registryContractId;
-    this.rpc = new SorobanRpc.Server(config.rpcUrl);
+    this.rpcServer = new rpc.Server(config.rpcUrl);
     this.wallet = wallet;
     this.networkPassphrase = wallet.network();
   }
 
   async register(metadataUri: string, capabilities: bigint): Promise<void> {
     await callContract(
-      this.rpc,
+      this.rpcServer,
       this.contractId,
       "register",
       [
@@ -33,7 +33,7 @@ export class RegistryClient {
 
   async update(metadataUri: string, capabilities: bigint): Promise<void> {
     await callContract(
-      this.rpc,
+      this.rpcServer,
       this.contractId,
       "update",
       [
@@ -48,7 +48,7 @@ export class RegistryClient {
 
   async setActive(active: boolean): Promise<void> {
     await callContract(
-      this.rpc,
+      this.rpcServer,
       this.contractId,
       "set_active",
       [
@@ -62,7 +62,7 @@ export class RegistryClient {
 
   async get(address: string): Promise<AgentEntry | null> {
     const result = await viewContract(
-      this.rpc,
+      this.rpcServer,
       this.contractId,
       "get",
       [new Address(address).toScVal()],
@@ -73,7 +73,7 @@ export class RegistryClient {
     if (result.switch() === xdr.ScValType.scvVoid()) return null;
 
     // Unwrap Option<AgentEntry>
-    const inner = result.switch().name === "scvMap" ? result : result.value() as xdr.ScVal;
+    const inner = result.switch().name === "scvMap" ? result : result.value() as unknown as xdr.ScVal;
     if (!inner || inner.switch() === xdr.ScValType.scvVoid()) return null;
 
     const native = scValToNative(inner) as Record<string, unknown>;
@@ -88,7 +88,7 @@ export class RegistryClient {
 
   async count(): Promise<number> {
     const result = await viewContract(
-      this.rpc,
+      this.rpcServer,
       this.contractId,
       "count",
       [],

@@ -1,13 +1,9 @@
-/**
- * Shared helper for building, simulating, and submitting Soroban transactions.
- */
-
 import {
   Account,
   Contract,
   Keypair,
   Networks,
-  SorobanRpc,
+  rpc,
   Transaction,
   TransactionBuilder,
   nativeToScVal,
@@ -17,14 +13,14 @@ import {
 } from "@stellar/stellar-sdk";
 
 export async function callContract(
-  rpc: SorobanRpc.Server,
+  rpcServer: rpc.Server,
   contractId: string,
   method: string,
   args: xdr.ScVal[],
   signer: Keypair,
   networkPassphrase: string
 ): Promise<xdr.ScVal> {
-  const source = await rpc.getAccount(signer.publicKey());
+  const source = await rpcServer.getAccount(signer.publicKey());
   const account = new Account(source.accountId(), source.sequenceNumber());
 
   const tx = new TransactionBuilder(account, {
@@ -35,43 +31,43 @@ export async function callContract(
     .setTimeout(30)
     .build();
 
-  const simResult = await rpc.simulateTransaction(tx);
-  if (SorobanRpc.Api.isSimulationError(simResult)) {
+  const simResult = await rpcServer.simulateTransaction(tx);
+  if (rpc.Api.isSimulationError(simResult)) {
     throw new Error(`Simulation failed: ${simResult.error}`);
   }
 
-  const prepared = SorobanRpc.assembleTransaction(tx, simResult).build();
+  const prepared = rpc.assembleTransaction(tx, simResult).build();
   prepared.sign(signer);
 
-  const sendResult = await rpc.sendTransaction(prepared);
+  const sendResult = await rpcServer.sendTransaction(prepared);
   if (sendResult.status === "ERROR") {
     throw new Error(`Send failed: ${JSON.stringify(sendResult.errorResult)}`);
   }
 
   // Poll for confirmation
-  let getResult = await rpc.getTransaction(sendResult.hash);
-  while (getResult.status === SorobanRpc.Api.GetTransactionStatus.NOT_FOUND) {
+  let getResult = await rpcServer.getTransaction(sendResult.hash);
+  while (getResult.status === rpc.Api.GetTransactionStatus.NOT_FOUND) {
     await new Promise((r) => setTimeout(r, 1000));
-    getResult = await rpc.getTransaction(sendResult.hash);
+    getResult = await rpcServer.getTransaction(sendResult.hash);
   }
 
-  if (getResult.status === SorobanRpc.Api.GetTransactionStatus.FAILED) {
+  if (getResult.status === rpc.Api.GetTransactionStatus.FAILED) {
     throw new Error("Transaction failed");
   }
 
-  return (getResult as SorobanRpc.Api.GetSuccessfulTransactionResponse)
+  return (getResult as rpc.Api.GetSuccessfulTransactionResponse)
     .returnValue ?? xdr.ScVal.scvVoid();
 }
 
 export async function viewContract(
-  rpc: SorobanRpc.Server,
+  rpcServer: rpc.Server,
   contractId: string,
   method: string,
   args: xdr.ScVal[],
   callerPublicKey: string,
   networkPassphrase: string
 ): Promise<xdr.ScVal> {
-  const source = await rpc.getAccount(callerPublicKey);
+  const source = await rpcServer.getAccount(callerPublicKey);
   const account = new Account(source.accountId(), source.sequenceNumber());
 
   const tx = new TransactionBuilder(account, {
@@ -82,25 +78,25 @@ export async function viewContract(
     .setTimeout(30)
     .build();
 
-  const simResult = await rpc.simulateTransaction(tx);
-  if (SorobanRpc.Api.isSimulationError(simResult)) {
+  const simResult = await rpcServer.simulateTransaction(tx);
+  if (rpc.Api.isSimulationError(simResult)) {
     throw new Error(`Simulation failed: ${simResult.error}`);
   }
 
-  return (simResult as SorobanRpc.Api.SimulateTransactionSuccessResponse)
+  return (simResult as rpc.Api.SimulateTransactionSuccessResponse)
     .result?.retval ?? xdr.ScVal.scvVoid();
 }
 
 /** Build an unsigned transaction XDR string for client-side signing (frontend). */
 export async function buildUnsignedTx(
-  rpc: SorobanRpc.Server,
+  rpcServer: rpc.Server,
   contractId: string,
   method: string,
   args: xdr.ScVal[],
   callerPublicKey: string,
   networkPassphrase: string
 ): Promise<string> {
-  const source = await rpc.getAccount(callerPublicKey);
+  const source = await rpcServer.getAccount(callerPublicKey);
   const account = new Account(source.accountId(), source.sequenceNumber());
 
   const tx = new TransactionBuilder(account, {
@@ -111,10 +107,10 @@ export async function buildUnsignedTx(
     .setTimeout(30)
     .build();
 
-  const simResult = await rpc.simulateTransaction(tx);
-  if (SorobanRpc.Api.isSimulationError(simResult)) {
+  const simResult = await rpcServer.simulateTransaction(tx);
+  if (rpc.Api.isSimulationError(simResult)) {
     throw new Error(`Simulation failed: ${simResult.error}`);
   }
 
-  return SorobanRpc.assembleTransaction(tx, simResult).build().toXDR();
+  return rpc.assembleTransaction(tx, simResult).build().toXDR();
 }

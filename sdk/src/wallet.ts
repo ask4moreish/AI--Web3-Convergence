@@ -6,17 +6,17 @@
  * transactions autonomously.
  */
 
-import { Keypair, Networks, Server } from "@stellar/stellar-sdk";
+import { Horizon, Keypair, Networks } from "@stellar/stellar-sdk";
 import { AgentConfig } from "./types";
 
 export class AgentWallet {
   private keypair: Keypair;
-  private horizonServer: Server;
+  private horizonServer: Horizon.Server;
   private networkPassphrase: string;
 
   constructor(config: AgentConfig) {
     this.keypair = Keypair.fromSecret(config.secretKey);
-    this.horizonServer = new Server(config.horizonUrl);
+    this.horizonServer = new Horizon.Server(config.horizonUrl);
     this.networkPassphrase =
       config.network === "testnet"
         ? Networks.TESTNET
